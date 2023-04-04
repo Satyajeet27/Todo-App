@@ -1,22 +1,25 @@
 const { Schema, model } = require("mongoose");
 const { createHmac } = require("crypto");
 
-const userSchema = new Schema({
-  username: {
-    type: String,
-    required: true,
+const userSchema = new Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      minLength: 8,
+    },
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-    minLength: 8,
-  },
-});
+  { timestamps: true }
+);
 
 userSchema.pre("save", function (next) {
   const user = this;

@@ -2,17 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const connectDB = require("./conn");
 const path = require("path");
-const userListRouter = require("./routes/userList");
+const userListRouter = require("./routes/workItem");
 const { urlencoded } = require("express");
-const router = require("./routes/loginSignup");
+const accessRouter = require("./routes/auth");
 const cookieParser = require("cookie-parser");
 const isUserLoggedIn = require("./middleware/auth");
-const Item = require("./model/userList");
+const WORKITEM = require("./model/workItem");
+const USER = require("./model/user");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-connectDB();
 
 app.use(express.json());
 app.use(urlencoded({ extended: true }));
@@ -23,16 +22,27 @@ app.set("view engine", "ejs");
 app.set("views", path.resolve("./view"));
 
 app.use(isUserLoggedIn());
-app.use("/todo", userListRouter);
-app.use("/", router);
 
+app.use("/", accessRouter);
+app.use("/todo", userListRouter);
 app.get("/", async (req, resp) => {
   //   console.log(req.user);
   if (!req.user) return resp.redirect("/login");
-  const userItem = await Item.find({ createdBy: req.user._id });
-  return resp.render("home", { user: req.user, items: userItem });
+  const workItem = await WORKITEM.find({ createdBy: req.user._id });
+  const checkUser = await USER.findOne({ _id: req.user._id });
+  if (!checkUser) return resp.clearCookie("token").redirect("/login");
+  // console.log(workItem);
+  return resp.render("home", { user: req.user, items: workItem });
 });
 
-app.listen(PORT, () =>
-  console.log(`successfully connected to localhost:${PORT}`)
-);
+const startApp = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`successfully connected to localhost:${PORT}`);
+    });
+    // Clear cookie on server start
+  } catch (error) {}
+};
+
+startApp();
